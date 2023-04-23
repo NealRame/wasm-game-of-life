@@ -22,12 +22,15 @@ jobs:
         node-version: 16
         registry-url: "https://registry.npmjs.org"
         scope: "@nealrame"
+
     - name: Install wasm-pack
       run: cargo install wasm-pack
-    - name: Build and publish
+
+    - name: Build
+      run: wasm-pack build --scope nealrame
+
+    - name: Publish
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
-      run: |
-        wasm-pack build --scope nealrame
-        cd pkg
-        npm publish --access public
+      working-directory: ./pkg
+      run: npm publish --access public
