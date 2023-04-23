@@ -102,7 +102,14 @@ function createController(tickCount) {
         const row = Math.min(Math.floor(canvasTop/(CELL_SIZE + 1)), height - 1);
         const col = Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), width - 1);
 
-        universe.toggle_cell(row, col);
+        if (event.altKey) {
+            universe.generate_glider(row, col);
+        } else if (event.shiftKey) {
+            universe.generate_pulsar(row, col);
+        } else {
+            universe.toggle_cell(row, col);
+        }
+
         render();
     });
 

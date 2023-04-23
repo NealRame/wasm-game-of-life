@@ -31,8 +31,8 @@ impl Cell {
 
 #[wasm_bindgen]
 pub struct Universe {
-    width: u32,
-    height: u32,
+    width: i32,
+    height: i32,
     cells: Vec<Cell>,
 }
 
@@ -40,17 +40,17 @@ impl Universe {
     /// Set the width of the universe.
     /// 
     /// Resets all cells to the dead state.
-    pub fn set_width(&mut self, width: u32) {
-        self.width = width;
-        self.cells = (0..width*self.height).map(|_| Cell::Dead).collect();
+    pub fn set_width(&mut self, width: i32) {
+        self.width = 1.max(width) ;
+        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
     }
 
     /// Set the height of the universe.
     /// 
     /// Resets all cells to the dead state.
-    pub fn set_height(&mut self, height: u32) {
-        self.height = height;
-        self.cells = (0..self.width*height).map(|_| Cell::Dead).collect();
+    pub fn set_height(&mut self, height: i32) {
+        self.height = 1.max(height);
+        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
     }
 
     /// Get the dead and alive values of the entire universe.
@@ -63,31 +63,28 @@ impl Universe {
     /// Set cells to be alive in the universe given a list of coordinates.
     /// 
     /// Coordinates are given as a list of (row, column) tuples.
-    pub fn set_cells(&mut self, cells: &[(u32, u32)]) {
+    pub fn set_cells(&mut self, cells: &[(i32, i32)]) {
         for (row, col) in cells.iter().cloned() {
             let idx = self.get_index(row, col);
             self.cells[idx] = Cell::Alive;
         }
     }
 
-    fn get_index(&self, row: u32, col: u32) -> usize {
+    fn get_index(&self, row: i32, col: i32) -> usize {
+        let row = (row%self.height + self.height)%self.height;
+        let col = (col%self.width  + self.width )%self.width;
         (row*self.width + col) as usize
     }
 
-    fn live_neighbour_count(&self, row: u32, col: u32) -> u8 {
+    fn live_neighbour_count(&self, row: i32, col: i32) -> u8 {
         let mut count = 0;
 
-        for delta_row in [self.height - 1, 0, 1].iter().cloned() {
-            for delta_col in [self.width - 1, 0, 1].iter().cloned() {
-                if delta_row == 0 && delta_col == 0 {
-                    continue;
+        for delta_row in [-1, 0, 1].iter().cloned() {
+            for delta_col in [-1, 0, 1].iter().cloned() {
+                if delta_row != 0 || delta_col != 0 {
+                    let idx = self.get_index(row + delta_row, col + delta_col);
+                    count += self.cells[idx] as u8;
                 }
-
-                let neighbour_row = (row + delta_row)%self.height;
-                let neighbour_col = (col + delta_col)%self.width;
-                let idx = self.get_index(neighbour_row, neighbour_col);
-
-                count += self.cells[idx] as u8;
             }
         }
 
@@ -118,11 +115,11 @@ impl Universe {
         }
     }
 
-    pub fn width(&self) -> u32 {
+    pub fn width(&self) -> i32 {
         self.width
     }
 
-    pub fn height(&self) -> u32 {
+    pub fn height(&self) -> i32 {
         self.height
     }
 
@@ -130,9 +127,75 @@ impl Universe {
         self.cells.as_ptr()
     }
 
-    pub fn toggle_cell(&mut self, row: u32, col: u32) {
+    pub fn toggle_cell(&mut self, row: i32, col: i32) {
         let idx = self.get_index(row, col);
         self.cells[idx].toggle();
+    }
+
+    pub fn generate_glider(&mut self, row: i32, col: i32) {
+        self.set_cells(&[
+            (row + 1, col - 1),
+            (row - 1, col),
+            (row + 1, col),
+            (row, col + 1),
+            (row + 1, col + 1),
+        ]);
+    }
+
+    pub fn generate_pulsar(&mut self, row: i32, col: i32) {
+        self.set_cells(&[
+            (row - 2, col - 1),
+            (row - 3, col - 1),
+            (row - 4, col - 1),
+            (row - 1, col - 2),
+            (row - 6, col - 2),
+            (row - 1, col - 3),
+            (row - 6, col - 3),
+            (row - 1, col - 4),
+            (row - 6, col - 4),
+            (row - 2, col - 6),
+            (row - 3, col - 6),
+            (row - 4, col - 6),
+
+            (row + 2, col - 1),
+            (row + 3, col - 1),
+            (row + 4, col - 1),
+            (row + 1, col - 2),
+            (row + 6, col - 2),
+            (row + 1, col - 3),
+            (row + 6, col - 3),
+            (row + 1, col - 4),
+            (row + 6, col - 4),
+            (row + 2, col - 6),
+            (row + 3, col - 6),
+            (row + 4, col - 6),
+
+            (row - 2, col + 1),
+            (row - 3, col + 1),
+            (row - 4, col + 1),
+            (row - 1, col + 2),
+            (row - 6, col + 2),
+            (row - 1, col + 3),
+            (row - 6, col + 3),
+            (row - 1, col + 4),
+            (row - 6, col + 4),
+            (row - 2, col + 6),
+            (row - 3, col + 6),
+            (row - 4, col + 6),
+
+            (row + 2, col + 1),
+            (row + 3, col + 1),
+            (row + 4, col + 1),
+            (row + 1, col + 2),
+            (row + 6, col + 2),
+            (row + 1, col + 3),
+            (row + 6, col + 3),
+            (row + 1, col + 4),
+            (row + 6, col + 4),
+            (row + 2, col + 6),
+            (row + 3, col + 6),
+            (row + 4, col + 6),
+        ]);
     }
 
     pub fn clear(&mut self) {
