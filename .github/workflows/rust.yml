@@ -24,11 +24,10 @@ jobs:
         scope: "@nealrame"
     - name: Install wasm-pack
       run: cargo install wasm-pack
-    - name: Build
-      run: wasm-pack build --scope nealrame
-    - name: Publish
-      - run: npm ci
-      - run: npm run build
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
+    - name: Build and publish
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
+      run: |
+        wasm-pack build --scope nealrame
+        cd pkg
+        npm publish --access public
