@@ -91,8 +91,6 @@ function createController(tickCount) {
     };
 
     canvas.addEventListener("click", event => {
-        if (running) return ;
-
         const boundingRect = canvas.getBoundingClientRect();
         const scaleX = canvas.width/boundingRect.width;
         const scaleY = canvas.height/boundingRect.height;
@@ -110,7 +108,9 @@ function createController(tickCount) {
             universe.toggle_cell(row, col);
         }
 
-        render();
+        if (!running) {
+            render();
+        }
     });
 
     render();
