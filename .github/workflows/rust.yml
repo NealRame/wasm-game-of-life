@@ -1,0 +1,24 @@
+name: Rust
+
+on: [workflow_dispatch]
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v3
+    - name: Install wasm-pack
+      run: cargo install wasm-pack
+    - name: Build
+      run: wasm-pack build --scope nealrame
