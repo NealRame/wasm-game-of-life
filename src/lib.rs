@@ -76,25 +76,28 @@ impl Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    pub fn new() -> Self {
-        let width = 64;
-        let height = 64;
-        let cells =
-            (0..width*height)
-                .map(|_| {
-                    if js_sys::Math::random() < 0.5 {
-                        Cell::Alive
-                    } else {
-                        Cell::Dead
-                    }
-                })
-                .collect();
+    pub fn new(width: u32, height: u32) -> Self {
+        let width = 1.max(width as i32);
+        let height = 1.max(height as i32);
+        let cells = vec![Cell::Dead; (width*height) as usize];
 
         Universe {
             width,
             height,
             cells,
         }
+    }
+
+    pub fn randomize(&mut self) {
+        self.cells = (0..self.width*self.height)
+            .map(|_| {
+                if js_sys::Math::random() < 0.5 {
+                    Cell::Alive
+                } else {
+                    Cell::Dead
+                }
+            })
+            .collect();
     }
 
     pub fn width(&self) -> i32 {
@@ -135,7 +138,7 @@ impl Universe {
             (row + 1, col - 1),
             (row - 1, col),
             (row + 1, col),
-            (row, col + 1),
+            (row    , col + 1),
             (row + 1, col + 1),
         ]);
     }
