@@ -13,9 +13,11 @@ const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
 function createController(tickCount) {
-    const universe = Universe.new();
+    const universe = Universe.new(32, 32);
     const width = universe.width();
     const height = universe.height();
+
+    universe.randomize();
 
     const canvas = document.getElementById("game-of-life-canvas");
     const ctx = canvas.getContext("2d");
