@@ -35,22 +35,6 @@ pub struct Universe {
 }
 
 impl Universe {
-    /// Set the width of the universe.
-    /// 
-    /// Resets all cells to the dead state.
-    pub fn set_width(&mut self, width: i32) {
-        self.width = 1.max(width) ;
-        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
-    }
-
-    /// Set the height of the universe.
-    /// 
-    /// Resets all cells to the dead state.
-    pub fn set_height(&mut self, height: i32) {
-        self.height = 1.max(height);
-        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
-    }
-
     /// Get the dead and alive values of the entire universe.
     /// 
     /// Returns a slice of Cell values
@@ -119,6 +103,22 @@ impl Universe {
 
     pub fn height(&self) -> i32 {
         self.height
+    }
+
+    /// Set the width of the universe.
+    /// 
+    /// Resets all cells to the dead state.
+    pub fn set_width(&mut self, width: i32) {
+        self.width = 1.max(width) ;
+        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
+    }
+
+    /// Set the height of the universe.
+    /// 
+    /// Resets all cells to the dead state.
+    pub fn set_height(&mut self, height: i32) {
+        self.height = 1.max(height);
+        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
     }
 
     pub fn cells(&self) -> *const Cell {
