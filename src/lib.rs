@@ -1,5 +1,3 @@
-mod utils;
-
 use std::fmt;
 
 use wasm_bindgen::prelude::*;
