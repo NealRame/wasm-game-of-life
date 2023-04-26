@@ -42,16 +42,6 @@ impl Universe {
         &self.cells
     }
 
-    /// Set cells to be alive in the universe given a list of coordinates.
-    /// 
-    /// Coordinates are given as a list of (row, column) tuples.
-    pub fn set_cells(&mut self, cells: &[(i32, i32)]) {
-        for (row, col) in cells.iter().cloned() {
-            let idx = self.get_index(row, col);
-            self.cells[idx] = Cell::Alive;
-        }
-    }
-
     fn get_index(&self, row: i32, col: i32) -> usize {
         let row = (row%self.height + self.height)%self.height;
         let col = (col%self.width  + self.width )%self.width;
@@ -74,6 +64,15 @@ impl Universe {
     }
 }
 
+fn js_array_to_coordinate_tuple(
+    array: &js_sys::Array,
+) -> Result<(i32, i32), JsError> {
+    (0..=1)
+        .map(|i| array.get(i).as_f64().ok_or(JsError::new("Invalid type")))
+        .collect::<Result<Vec<_>, JsError>>()
+        .map(|v| (v[0] as i32, v[1] as i32))
+}
+
 #[wasm_bindgen]
 impl Universe {
     pub fn new(width: u32, height: u32) -> Self {
@@ -88,6 +87,12 @@ impl Universe {
         }
     }
 
+    /// Set all cells to the dead state.
+    pub fn clear(&mut self) {
+        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
+    }
+
+    /// Randomly set cells to be alive or dead.
     pub fn randomize(&mut self) {
         self.cells = (0..self.width*self.height)
             .map(|_| {
@@ -128,48 +133,57 @@ impl Universe {
         self.cells.as_ptr()
     }
 
+    /// Get the state of a cell in the universe.
+    pub fn get_cell(&self, row: i32, col: i32) -> Cell {
+        let idx = self.get_index(row, col);
+        self.cells[idx]
+    }
+
+    /// Set the state of a cell in the universe.
+    pub fn set_cell(&mut self, row: i32, col: i32, state: Cell) {
+        let idx = self.get_index(row, col);
+        self.cells[idx] = state;
+    }
+
+    /// Set the state of a list of cells in the universe.
+    /// 
+    /// Expects an array of arrays of the form [[row, col], [row, col], ...]
+    pub fn set_cells(
+        &mut self,
+        cells: js_sys::Array,
+        state: Cell,
+    ) -> Result<(), JsError> {
+        cells
+            .iter()
+            .map(|value| {
+                let cell = value.unchecked_into::<js_sys::Array>();
+                let (row, col) = js_array_to_coordinate_tuple(&cell)?;
+                self.set_cell(row, col, state);
+                Ok(())
+            })
+            .collect::<Result<(), JsError>>()
+    }
+
+    /// Set the state of a cell in the universe.
     pub fn toggle_cell(&mut self, row: i32, col: i32) {
         let idx = self.get_index(row, col);
         self.cells[idx].toggle();
     }
 
-    pub fn generate_glider(&mut self, row: i32, col: i32) {
-        self.set_cells(&[
-            (row + 1, col - 1),
-            (row - 1, col),
-            (row + 1, col),
-            (row    , col + 1),
-            (row + 1, col + 1),
-        ]);
-    }
-
-    pub fn generate_pulsar(&mut self, row: i32, col: i32) {
-        self.set_cells(&[
-            (row - 2, col - 1), (row - 3, col - 1), (row - 4, col - 1),
-            (row - 1, col - 2), (row - 6, col - 2),
-            (row - 1, col - 3), (row - 6, col - 3),
-            (row - 1, col - 4), (row - 6, col - 4),
-            (row - 2, col - 6), (row - 3, col - 6), (row - 4, col - 6),
-            (row + 2, col - 1), (row + 3, col - 1), (row + 4, col - 1),
-            (row + 1, col - 2), (row + 6, col - 2),
-            (row + 1, col - 3), (row + 6, col - 3),
-            (row + 1, col - 4), (row + 6, col - 4),
-            (row + 2, col - 6), (row + 3, col - 6), (row + 4, col - 6),
-            (row - 2, col + 1), (row - 3, col + 1), (row - 4, col + 1),
-            (row - 1, col + 2), (row - 6, col + 2),
-            (row - 1, col + 3), (row - 6, col + 3),
-            (row - 1, col + 4), (row - 6, col + 4),
-            (row - 2, col + 6), (row - 3, col + 6), (row - 4, col + 6),
-            (row + 2, col + 1), (row + 3, col + 1), (row + 4, col + 1),
-            (row + 1, col + 2), (row + 6, col + 2),
-            (row + 1, col + 3), (row + 6, col + 3),
-            (row + 1, col + 4), (row + 6, col + 4),
-            (row + 2, col + 6), (row + 3, col + 6), (row + 4, col + 6),
-        ]);
-    }
-
-    pub fn clear(&mut self) {
-        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
+    /// Toggle the state of a cell in the universe.
+    /// 
+    /// Expects an array of arrays of the form [[row, col], [row, col], ...]
+    pub fn toggle_cells(&mut self, cells: js_sys::Array)
+        -> Result<(), JsError> {
+        cells
+            .iter()
+            .map(|value| {
+                let cell = value.unchecked_into::<js_sys::Array>();
+                let (row, col) = js_array_to_coordinate_tuple(&cell)?;
+                self.toggle_cell(row, col);
+                Ok(())
+            })
+            .collect::<Result<(), JsError>>()
     }
 
     pub fn tick(&mut self) {

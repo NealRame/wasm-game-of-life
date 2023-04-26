@@ -103,9 +103,37 @@ function createController(tickCount) {
         const col = Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), width - 1);
 
         if (event.altKey) {
-            universe.generate_glider(row, col);
+            universe.set_cells([
+                [row + 1, col - 1],
+                [row - 1, col    ],
+                [row + 1, col    ],
+                [row    , col + 1],
+                [row + 1, col + 1],
+            ], Cell.Alive)
         } else if (event.shiftKey) {
-            universe.generate_pulsar(row, col);
+            universe.set_cells([
+                [row - 2, col - 1], [row - 3, col - 1], [row - 4, col - 1],
+                [row - 1, col - 2], [row - 6, col - 2],
+                [row - 1, col - 3], [row - 6, col - 3],
+                [row - 1, col - 4], [row - 6, col - 4],
+                [row - 2, col - 6], [row - 3, col - 6], [row - 4, col - 6],
+                [row + 2, col - 1], [row + 3, col - 1], [row + 4, col - 1],
+                [row + 1, col - 2], [row + 6, col - 2],
+                [row + 1, col - 3], [row + 6, col - 3],
+                [row + 1, col - 4], [row + 6, col - 4],
+                [row + 2, col - 6], [row + 3, col - 6], [row + 4, col - 6],
+                [row - 2, col + 1], [row - 3, col + 1], [row - 4, col + 1],
+                [row - 1, col + 2], [row - 6, col + 2],
+                [row - 1, col + 3], [row - 6, col + 3],
+                [row - 1, col + 4], [row - 6, col + 4],
+                [row - 2, col + 6], [row - 3, col + 6], [row - 4, col + 6],
+                [row + 2, col + 1], [row + 3, col + 1], [row + 4, col + 1],
+                [row + 1, col + 2], [row + 6, col + 2],
+                [row + 1, col + 3], [row + 6, col + 3],
+                [row + 1, col + 4], [row + 6, col + 4],
+                [row + 2, col + 6], [row + 3, col + 6], [row + 4, col + 6],
+            ], Cell.Alive)
+
         } else {
             universe.toggle_cell(row, col);
         }
