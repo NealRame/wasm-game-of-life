@@ -3,6 +3,7 @@ use std::fmt;
 use wasm_bindgen::prelude::*;
 
 extern crate js_sys;
+extern crate web_sys;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -46,6 +47,12 @@ impl Universe {
         let row = (row%self.height + self.height)%self.height;
         let col = (col%self.width  + self.width )%self.width;
         (row*self.width + col) as usize
+    }
+
+    fn get_row_col(&self, index: usize) -> (i32, i32) {
+        let row = index as i32/self.width;
+        let col = index as i32%self.width;
+        (row, col)
     }
 
     fn live_neighbour_count(&self, row: i32, col: i32) -> u8 {
@@ -156,10 +163,12 @@ impl Universe {
         cells
             .iter()
             .map(|value| {
-                let cell = value.unchecked_into::<js_sys::Array>();
-                let (row, col) = js_array_to_coordinate_tuple(&cell)?;
-                self.set_cell(row, col, state);
-                Ok(())
+                if value.is_array() {
+                    let cell = value.unchecked_into::<js_sys::Array>();
+                    let (row, col) = js_array_to_coordinate_tuple(&cell)?;
+                    self.set_cell(row, col, state);
+                    Ok(())
+                } else { Err(JsError::new("Invalid type")) }
             })
             .collect::<Result<(), JsError>>()
     }
@@ -210,8 +219,48 @@ impl Universe {
         self.cells = cells;
     }
 
-    pub fn render(&self) -> String {
+    pub fn render_str(&self) -> String {
         self.to_string()
+    }
+
+    /// Render the universe to a canvas element.
+    pub fn render_to_context(
+        &self,
+        context: web_sys::CanvasRenderingContext2d,
+        theme: JsValue,
+    ) -> Result<(), JsError> {
+        let cell_size = match js_sys::Reflect::get(&theme, &"cellSize".into()) {
+            Ok(value) => value.as_f64().ok_or(JsError::new("cellSize should be a number"))?,
+            Err(_) => 5.0,
+        };
+
+        let alive_color =
+            js_sys::Reflect::get(&theme, &"aliveCell".into())
+                .unwrap_or(JsValue::from_str("#000000"));
+
+        let dead_color =
+            js_sys::Reflect::get(&theme, &"deadCell".into())
+                .unwrap_or(JsValue::from_str("#ffffff"));
+
+        context.begin_path();
+        for (idx, cell) in self.cells.iter().copied().enumerate() {
+            if cell == Cell::Alive {
+                context.set_fill_style(&alive_color);
+            } else {
+                context.set_fill_style(&dead_color);
+            }
+ 
+            let (row, col) = self.get_row_col(idx);
+            context.fill_rect(
+                (col as f64)*(cell_size + 1.0) + 1.0,
+                (row as f64)*(cell_size + 1.0) + 1.0,
+                cell_size,
+                cell_size,
+            );
+        }
+        context.stroke();
+
+        Ok(())
     }
 }
 
