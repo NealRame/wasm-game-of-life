@@ -149,6 +149,20 @@ function createController(tickCount) {
             if (!running) {
                 universe.free();
                 universe = Universe.from_rle(s);
+                widthInput.value = universe.width();
+                heightInput.value = universe.height();
+                render();
+            }
+        },
+        setWidth(w) {
+            if (!running) {
+                universe.set_width(w);
+                render();
+            }
+        },
+        setHeight(h) {
+            if (!running) {
+                universe.set_height(h);
                 render();
             }
         },
@@ -171,6 +185,9 @@ const playPauseButton = document.querySelector("#play-pause");
 const stepButton = document.querySelector("#step");
 const randomizeButton = document.querySelector("#randomize");
 const clearButton = document.querySelector("#clear");
+
+const widthInput = document.querySelector("#width");
+const heightInput = document.querySelector("#height");
 
 const exportButton = document.querySelector("#export-button");
 const importButton = document.querySelector("#import-button");
@@ -209,6 +226,20 @@ clearButton.addEventListener("click", event => {
 stepButton.addEventListener("click", event => {
     if (!controller.running) {
         controller.step();
+    }
+})
+
+widthInput.addEventListener("change", event => {
+    if (!controller.running) {
+        const width = parseInt(widthInput.value);
+        controller.setWidth(width);
+    }
+})
+
+heightInput.addEventListener("change", event => {
+    if (!controller.running) {
+        const height = parseInt(heightInput.value);
+        controller.setHeight(height);
     }
 })
 
