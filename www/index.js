@@ -13,17 +13,12 @@ const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
 function createController(tickCount) {
-    const universe = Universe.new(32, 32);
-    const width = universe.width();
-    const height = universe.height();
+    let universe = Universe.new(32, 32);
 
     universe.randomize();
 
     const canvas = document.getElementById("game-of-life-canvas");
     const ctx = canvas.getContext("2d");
-
-    canvas.width = (CELL_SIZE + 1) * width + 1;
-    canvas.height = (CELL_SIZE + 1) * height + 1;
 
     let tick = 0;
     let frameId = 0;
@@ -34,22 +29,18 @@ function createController(tickCount) {
         ctx.strokeStyle = GRID_COLOR;
     
         // Vertical lines.
-        for (let i = 0; i <= width; i++) {
+        for (let i = 0; i <= universe.width(); i++) {
             ctx.moveTo(i*(CELL_SIZE + 1) + 1, 0);
-            ctx.lineTo(i*(CELL_SIZE + 1) + 1, (CELL_SIZE + 1)*height + 1);
+            ctx.lineTo(i*(CELL_SIZE + 1) + 1, (CELL_SIZE + 1)*universe.height() + 1);
         }
     
         // Horizontal lines.
-        for (let j = 0; j <= height; j++) {
+        for (let j = 0; j <= universe.height(); j++) {
             ctx.moveTo(0,                         j*(CELL_SIZE + 1) + 1);
-            ctx.lineTo((CELL_SIZE + 1)*width + 1, j*(CELL_SIZE + 1) + 1);
+            ctx.lineTo((CELL_SIZE + 1)*universe.width() + 1, j*(CELL_SIZE + 1) + 1);
         }
     
         ctx.stroke();
-    }
-    
-    function getIndex(row, col) {
-        return row*width + col;
     }
     
     function drawCells() {
@@ -58,32 +49,11 @@ function createController(tickCount) {
             aliveCell: ALIVE_COLOR,
             deadCell: DEAD_COLOR,
         });
-        // const cellsPtr = universe.cells();
-        // const cells = new Uint8Array(memory.buffer, cellsPtr, width*height);
-    
-        // ctx.beginPath();
-    
-        // for (let row = 0; row < height; row++) {
-        //     for (let col = 0; col < width; col++) {
-        //         const idx = getIndex(row, col);
-        
-        //         ctx.fillStyle = cells[idx] === Cell.Dead
-        //             ? DEAD_COLOR
-        //             : ALIVE_COLOR;
-        
-        //         ctx.fillRect(
-        //             col*(CELL_SIZE + 1) + 1,
-        //             row*(CELL_SIZE + 1) + 1,
-        //             CELL_SIZE,
-        //             CELL_SIZE
-        //         );
-        //     }
-        // }
-    
-        // ctx.stroke();
     }
 
     function render() {
+        canvas.width = (CELL_SIZE + 1) * universe.width() + 1;
+        canvas.height = (CELL_SIZE + 1) * universe.height() + 1;
         drawGrid();
         drawCells();
     }
@@ -104,8 +74,8 @@ function createController(tickCount) {
         const canvasLeft = (event.clientX - boundingRect.left)*scaleX;
         const canvasTop = (event.clientY - boundingRect.top)*scaleY;
 
-        const row = Math.min(Math.floor(canvasTop/(CELL_SIZE + 1)), height - 1);
-        const col = Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), width - 1);
+        const row = Math.min(Math.floor(canvasTop/(CELL_SIZE + 1)), universe.height() - 1);
+        const col = Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), universe.width() - 1);
 
         if (event.altKey) {
             universe.set_cells([
@@ -169,9 +139,25 @@ function createController(tickCount) {
                 render();
             }
         },
+        randomize() {
+            if (!running) {
+                universe.randomize();
+                render();
+            }
+        },
+        reset(s) {
+            if (!running) {
+                universe.free();
+                universe = Universe.from_rle(s);
+                render();
+            }
+        },
         clear() {
             universe.clear();
             render();
+        },
+        export() {
+            return universe.to_rle();
         },
         get running() {
             return running;
@@ -179,12 +165,16 @@ function createController(tickCount) {
     }
 }
 
-
 const controller = createController(5);
 
-const playPauseButton = document.getElementById("play-pause");
-const stepButton = document.getElementById("step");
-const clearButton = document.getElementById("clear");
+const playPauseButton = document.querySelector("#play-pause");
+const stepButton = document.querySelector("#step");
+const randomizeButton = document.querySelector("#randomize");
+const clearButton = document.querySelector("#clear");
+
+const exportButton = document.querySelector("#export-button");
+const importButton = document.querySelector("#import-button");
+const ioBuffer = document.querySelector("#io > textarea");
 
 playPauseButton.addEventListener("click", event => {
     if (controller.running) {
@@ -193,14 +183,22 @@ playPauseButton.addEventListener("click", event => {
         playPauseButton.classList.add("pause");
         clearButton.disabled = false;
         stepButton.disabled = false;
+        exportButton.disabled = false;
     } else {
         controller.start();
         playPauseButton.classList.remove("pause");
         playPauseButton.classList.add("play");
         clearButton.disabled = true;
         stepButton.disabled = true;
+        exportButton.disabled = true;
     }
 });
+
+randomizeButton.addEventListener("click", event => {
+    if (!controller.running) {
+        controller.randomize();
+    }
+})
 
 clearButton.addEventListener("click", event => {
     if (!controller.running) {
@@ -211,5 +209,23 @@ clearButton.addEventListener("click", event => {
 stepButton.addEventListener("click", event => {
     if (!controller.running) {
         controller.step();
+    }
+})
+
+exportButton.addEventListener("click", event => {
+    if (!controller.running) {
+        const text = controller.export();
+        ioBuffer.value = text;
+        // const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+        // saveAs(blob, "game-of-life.rle");
+    }
+})
+
+importButton.addEventListener("click", event => {
+    if (!controller.running) {
+        const text = ioBuffer.value;
+        controller.reset(text);
+        // const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+        // saveAs(blob, "game-of-life.rle");
     }
 })

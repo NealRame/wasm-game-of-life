@@ -6,29 +6,32 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
       body {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        gap: 1rem;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
         margin: 0;
         padding: 0;
       }
-      canvas {
-        display: block;
+      #game-of-life {
+        height: 100vh;
+        width: 800px;
+
+        padding: 0;
+        margin: 0 auto;
+
+        display: grid;
+        grid-template-rows: max-content min-content 1fr;
+        gap: 1rem;
       }
-      #controller {
+      #game-of-life > canvas {
+        display: block;
+        justify-self: stretch;
+        padding: .5rem 0 0;
+      }
+      #game-of-life > #controller {
         display: flex;
         gap: 1rem;
         align-items: center;
         justify-content: center;
       }
-      #controller > button {
+      #game-of-life > #controller > button {
         background: none;
 
         width: 2rem;
@@ -39,38 +42,90 @@
 
         cursor: pointer;
       }
-      #controller > button:hover {
+      #game-of-life > #controller > button:hover {
         background: #ccc;
       }
-      #controller > button:active {
+      #game-of-life #controller > button:active {
         background: #ddd;
       }
-      #controller > button:disabled {
+      #game-of-life #controller > button:disabled {
         background: #ddd;
         border: #ddd;
         cursor: not-allowed;
       }
-      #controller > button.play > .fa-play {
+      #game-of-life #controller > button.play > .fa-play {
         display: none;
       }
-      #controller > button.pause > .fa-pause {
+      #game-of-life #controller > button.pause > .fa-pause {
         display: none;
+      }
+      #game-of-life #io {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+        justify-self: stretch;
+      }
+      #game-of-life #io > textarea {
+        border: 1px solid #000;
+        border-radius: 2px;
+        background-color: #eee;
+
+        display: block;
+
+        padding: 0;
+        margin: 0;
+
+        flex-grow: 1;
+
+        resize: none;
+      }
+      #game-of-life #io > #buttons {
+        display: flex;
+        gap: .25rem;
+        align-items: stretch;
+        justify-content: center;
+        padding: 0 0 .5rem;
+      }
+      #game-of-life #io > #buttons > button {
+        border: 1px solid #000;
+        border-radius: 2px;
+        background-color: #ddd;
+        display: block;
+        flex-grow: 1;
+        margin: 0;
+        padding: .125rem;
       }
     </style>
   </head>
   <body>
-    <canvas id="game-of-life-canvas"></canvas>
-    <div id="controller">
-      <button id="play-pause" class="pause">
-        <i class="fas fa-play"></i>
-        <i class="fas fa-pause"></i>
-      </button>
-      <button id="step">
-        <i class="fa-solid fa-forward-step"></i>
-      </button>
-      <button id="clear">
-        <i class="fa-solid fa-skull"></i>
-      </button>
+    <div id="game-of-life">
+      <canvas id="game-of-life-canvas"></canvas>
+      <div id="controller">
+        <button id="play-pause" class="pause">
+          <i class="fas fa-play"></i>
+          <i class="fas fa-pause"></i>
+        </button>
+        <button id="step">
+          <i class="fa-solid fa-forward-step"></i>
+        </button>
+        <button id="randomize">
+          <i class="fa-solid fa-dice"></i>
+        </button>
+        <button id="clear">
+          <i class="fa-solid fa-skull"></i>
+        </button>
+      </div>
+      <div id="io">
+        <textarea></textarea>
+        <div id="buttons">
+          <button id="import-button">
+            <i class="fa-solid fa-file-import"></i>
+          </button>
+          <button id="export-button">
+            <i class="fa-solid fa-file-export"></i>
+          </button>
+        </div>
+      </div>
     </div>
     <script src="./bootstrap.js"></script>
   </body>

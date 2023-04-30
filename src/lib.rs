@@ -1,9 +1,11 @@
-use std::fmt;
-
 use wasm_bindgen::prelude::*;
 
 extern crate js_sys;
 extern crate web_sys;
+
+mod rle_codec;
+
+pub use rle_codec::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -124,8 +126,9 @@ impl Universe {
     /// 
     /// Resets all cells to the dead state.
     pub fn set_width(&mut self, width: i32) {
-        self.width = 1.max(width) ;
+        let new_width = 1.max(width);
         self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
+        self.width = new_width;
     }
 
     /// Set the height of the universe.
@@ -220,7 +223,17 @@ impl Universe {
     }
 
     pub fn render_str(&self) -> String {
-        self.to_string()
+        let mut str = String::new();
+        for line in self.cells.as_slice().chunks(self.width as usize) {
+            for &cell in line {
+                match cell {
+                    Cell::Dead => str.push('◻'),
+                    Cell::Alive => str.push('◼'),
+                }
+            }
+            str.push('\n');
+        }
+        str
     }
 
     /// Render the universe to a canvas element.
@@ -260,22 +273,6 @@ impl Universe {
         }
         context.stroke();
 
-        Ok(())
-    }
-}
-
-impl fmt::Display for Universe {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for line in self.cells.as_slice().chunks(self.width as usize) {
-            for &cell in line {
-                write!(f, "{}", if cell == Cell::Dead {
-                    '◻'
-                } else {
-                    '◼'
-                })?;
-            }
-            write!(f, "\n")?;
-        }
         Ok(())
     }
 }
