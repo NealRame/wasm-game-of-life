@@ -42,17 +42,28 @@ pub fn to_rle(&self) -> String {
         });
 
     let mut rle = String::new();
+
     // header
     rle.push_str(&format!(
-        "x = {}, y = {}, rule = B3/S23\n", self.width, self.height
+        "x = {}, y = {}, rule = B3/S23",
+        self.width, self.height
     ));
+
     // content
-    for (count, c) in rle_content {
-        match count {
-            1 => rle.push(c),
-            _ => rle.push_str(&format!("{}{}", count, c)),
-        }
-    }
+    let rle_content_str = rle_content
+        .iter()
+        .flat_map(|(count, c)| {
+            match count {
+                1 => Vec::from_iter(c.to_string().bytes()),
+                _ => Vec::from_iter(format!("{}{}", count, c).bytes()),
+            }
+        })
+        .collect::<Vec<u8>>();
+
+    rle_content_str.chunks(70).for_each(|chunk| {
+        rle.push_str("\n");
+        rle.push_str(&String::from_utf8(chunk.to_vec()).unwrap());
+    });
 
     rle
 }}
