@@ -12,6 +12,32 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
+const playPauseButton = document.querySelector("#play-pause");
+const stepButton = document.querySelector("#step");
+const randomizeButton = document.querySelector("#randomize");
+const clearButton = document.querySelector("#clear");
+
+const mouseRowInput = document.querySelector("#position > #mouse-row");
+const mouseColInput = document.querySelector("#position > #mouse-col");
+
+const sizeWidthInput = document.querySelector("#size > #width");
+const sizeHeightInput = document.querySelector("#size > #height");
+
+const exportButton = document.querySelector("#export-button");
+const importButton = document.querySelector("#import-button");
+const ioBuffer = document.querySelector("#io > textarea");
+
+function throttle(fn, wait) {
+    let inThrottle = false;
+    return function(...args) {
+        if (!inThrottle) {
+            fn.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, wait);
+        }
+    }
+}
+
 function createController(tickCount) {
     let universe = Universe.new(32, 32);
 
@@ -23,6 +49,18 @@ function createController(tickCount) {
     let tick = 0;
     let frameId = 0;
     let running = false;
+
+    let mouseHover = false;
+    let mouseRow = 0;
+    let mouseCol = 0;
+
+    function drawCells() {
+        universe.render_to_context(ctx, {
+            cellSize: CELL_SIZE,
+            aliveCell: ALIVE_COLOR,
+            deadCell: DEAD_COLOR,
+        });
+    }
 
     function drawGrid() {
         ctx.beginPath();
@@ -42,13 +80,22 @@ function createController(tickCount) {
     
         ctx.stroke();
     }
-    
-    function drawCells() {
-        universe.render_to_context(ctx, {
-            cellSize: CELL_SIZE,
-            aliveCell: ALIVE_COLOR,
-            deadCell: DEAD_COLOR,
-        });
+
+    function drawCursor() {
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(230, 64, 60, 0.25)";
+        ctx.fillRect(
+            mouseCol*(CELL_SIZE + 1) + 1,
+            0,
+            CELL_SIZE + 1,
+            (CELL_SIZE + 1)*universe.height() + 1,
+        );
+        ctx.fillRect(
+            0,
+            mouseRow*(CELL_SIZE + 1) + 1,
+            (CELL_SIZE + 1)*universe.width() + 1,
+            CELL_SIZE + 1,
+        );
     }
 
     function render() {
@@ -56,6 +103,9 @@ function createController(tickCount) {
         canvas.height = (CELL_SIZE + 1) * universe.height() + 1;
         drawGrid();
         drawCells();
+        if (mouseHover && !running) {
+            drawCursor();
+        }
     }
 
     function renderLoop() {
@@ -67,15 +117,40 @@ function createController(tickCount) {
         frameId = requestAnimationFrame(renderLoop);
     };
 
-    canvas.addEventListener("click", event => {
+    const mousePosition = () => {
         const boundingRect = canvas.getBoundingClientRect();
         const scaleX = canvas.width/boundingRect.width;
         const scaleY = canvas.height/boundingRect.height;
         const canvasLeft = (event.clientX - boundingRect.left)*scaleX;
         const canvasTop = (event.clientY - boundingRect.top)*scaleY;
 
-        const row = Math.min(Math.floor(canvasTop/(CELL_SIZE + 1)), universe.height() - 1);
-        const col = Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), universe.width() - 1);
+        return [
+            /* col = */ Math.min(Math.floor(canvasLeft/(CELL_SIZE + 1)), universe.width() - 1),
+            /* row = */ Math.min(Math.floor(canvasTop/(CELL_SIZE + 1)), universe.height() - 1),
+        ]
+    }
+
+    canvas.addEventListener("mouseenter", event => {
+        mouseHover = true;
+        render();
+    })
+
+    canvas.addEventListener("mouseleave", event => {
+        mouseHover = false;
+        render();
+    })
+
+    canvas.addEventListener("mousemove", throttle(event => {
+        if (!running) {
+            [mouseCol, mouseRow] = mousePosition()
+            mouseRowInput.value = mouseRow;
+            mouseColInput.value = mouseCol;
+            render()
+        }
+    }, 60))
+
+    canvas.addEventListener("click", event => {
+        const [col, row] = mousePosition()
 
         if (event.altKey) {
             universe.set_cells([
@@ -149,8 +224,8 @@ function createController(tickCount) {
             if (!running) {
                 universe.free();
                 universe = Universe.from_rle(s);
-                widthInput.value = universe.width();
-                heightInput.value = universe.height();
+                sizeWidthInput.value = universe.width();
+                sizeHeightInput.value = universe.height();
                 render();
             }
         },
@@ -181,17 +256,7 @@ function createController(tickCount) {
 
 const controller = createController(5);
 
-const playPauseButton = document.querySelector("#play-pause");
-const stepButton = document.querySelector("#step");
-const randomizeButton = document.querySelector("#randomize");
-const clearButton = document.querySelector("#clear");
 
-const widthInput = document.querySelector("#width");
-const heightInput = document.querySelector("#height");
-
-const exportButton = document.querySelector("#export-button");
-const importButton = document.querySelector("#import-button");
-const ioBuffer = document.querySelector("#io > textarea");
 
 playPauseButton.addEventListener("click", event => {
     if (controller.running) {
@@ -229,16 +294,16 @@ stepButton.addEventListener("click", event => {
     }
 })
 
-widthInput.addEventListener("change", event => {
+sizeWidthInput.addEventListener("change", event => {
     if (!controller.running) {
-        const width = parseInt(widthInput.value);
+        const width = parseInt(sizeWidthInput.value);
         controller.setWidth(width);
     }
 })
 
-heightInput.addEventListener("change", event => {
+sizeHeightInput.addEventListener("change", event => {
     if (!controller.running) {
-        const height = parseInt(heightInput.value);
+        const height = parseInt(sizeHeightInput.value);
         controller.setHeight(height);
     }
 })

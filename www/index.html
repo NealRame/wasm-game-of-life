@@ -61,18 +61,40 @@
       #game-of-life #controller > button.pause > .fa-pause {
         display: none;
       }
+      #game-of-life #size-position {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+      }
       #game-of-life #size {
         display: flex;
         gap: .25rem;
-        align-items: center;
-        justify-content: center;
+      }
+      #game-of-life #size > span {
+        font-weight: bold;
       }
       #game-of-life #size > label {
-        font-weight: bold;
+        font-style: italic;
       }
       #game-of-life #size > input {
         flex-grow: 1;
       }
+
+      #game-of-life #position {
+        display: flex;
+        gap: .25rem;
+      }
+      #game-of-life #position > span {
+        font-weight: bold;
+      }
+      #game-of-life #position > label {
+        font-style: italic;
+      }
+      #game-of-life #position > input {
+        width: 8ch;
+      }
+
       #game-of-life #io {
         display: flex;
         flex-direction: column;
@@ -130,12 +152,22 @@
           <i class="fa-solid fa-skull"></i>
         </button>
       </div>
-      <div id="size">
-        <label for="width">width</label>
-        <input type="number" id="width" value="32" min="1" max="128" />
-        <i class="fa-solid fa-xmark"></i>
-        <label for="height">height</label>
-        <input type="number" id="height" value="32" min="1" max="128" />
+      <div id="size-position">
+        <div id="size">
+          <span>Size </span>
+          <label for="width">width = </label>
+          <input type="number" id="width" value="32" min="1" max="128" />
+          <i class="fa-solid fa-xmark"></i>
+          <label for="height">height = </label>
+          <input type="number" id="height" value="32" min="1" max="128" />
+        </div>
+        <div id="position">
+          <span>Position</span>
+          <label for="mouse-row">row = </label>
+          <input type="text" id="mouse-row" readonly/>
+          <label for="mouse-coll">col = </label>
+          <input type="text" id="mouse-col" readonly/>
+        </div>
       </div>
       <div id="io">
         <textarea></textarea>
