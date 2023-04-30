@@ -37,6 +37,26 @@ pub struct Universe {
     cells: Vec<Cell>,
 }
 
+fn coordinates_to_idx(
+    x: u32, y: u32,
+    w: u32, h: u32,
+) -> Option<usize> {
+    if x >= w || y >= h {
+        return None;
+    }
+    Some((y*w + x) as usize)
+}
+
+fn idx_to_coordinates(
+    idx: usize,
+    w: u32, h: u32,
+) -> Option<(u32, u32)> {
+    if idx as u32 >= w*h {
+        return None;
+    }
+    Some(((idx as u32)%w, (idx as u32)/w))
+}
+
 impl Universe {
     /// Get the dead and alive values of the entire universe.
     /// 
@@ -46,15 +66,17 @@ impl Universe {
     }
 
     fn get_index(&self, row: i32, col: i32) -> usize {
-        let row = (row%self.height + self.height)%self.height;
-        let col = (col%self.width  + self.width )%self.width;
-        (row*self.width + col) as usize
+        let col = ((col%self.width  + self.width )%self.width) as u32;
+        let row = ((row%self.height + self.height)%self.height) as u32;
+        coordinates_to_idx(col, row, self.width as u32, self.height as u32)
+            .unwrap()
     }
 
-    fn get_row_col(&self, index: usize) -> (i32, i32) {
-        let row = index as i32/self.width;
-        let col = index as i32%self.width;
-        (row, col)
+    fn get_coordinates(&self, index: usize) -> (i32, i32) {
+        let index = index%self.cells.len();
+        idx_to_coordinates(index, self.width as u32, self.height as u32)
+            .map(|(x, y)| (x as i32, y as i32))
+            .unwrap()
     }
 
     fn live_neighbour_count(&self, row: i32, col: i32) -> u8 {
@@ -125,18 +147,41 @@ impl Universe {
     /// Set the width of the universe.
     /// 
     /// Resets all cells to the dead state.
-    pub fn set_width(&mut self, width: i32) {
-        let new_width = 1.max(width);
-        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
-        self.width = new_width;
+    pub fn set_width(&mut self, new_width: i32) {
+        let new_width = 1.max(new_width) as u32;
+
+        let mut cells = vec![Cell::Dead; (new_width*self.height as u32) as usize];
+
+        for y in 0..(self.height as u32) {
+            for x in 0..new_width.min(self.width as u32) {
+                let new_idx = coordinates_to_idx(x, y, new_width as u32, self.height as u32).unwrap();
+                let idx = coordinates_to_idx(x, y, self.width as u32, self.height as u32).unwrap();
+                cells[new_idx] = self.cells[idx];
+            }
+        }
+
+        self.cells = cells;
+        self.width = new_width as i32;
     }
 
     /// Set the height of the universe.
     /// 
     /// Resets all cells to the dead state.
-    pub fn set_height(&mut self, height: i32) {
-        self.height = 1.max(height);
-        self.cells = (0..self.width*self.height).map(|_| Cell::Dead).collect();
+    pub fn set_height(&mut self, new_height: i32) {
+        let new_height = 1.max(new_height) as u32;
+
+        let mut cells = vec![Cell::Dead; (self.width as u32*new_height) as usize];
+
+        for y in 0..new_height.min(self.height as u32) {
+            for x in 0..(self.width as u32) {
+                let new_idx = coordinates_to_idx(x, y, self.width as u32, new_height as u32).unwrap();
+                let idx = coordinates_to_idx(x, y, self.width as u32, self.height as u32).unwrap();
+                cells[new_idx] = self.cells[idx];
+            }
+        }
+
+        self.cells = cells;
+        self.height = new_height as i32;
     }
 
     pub fn cells(&self) -> *const Cell {
@@ -262,8 +307,8 @@ impl Universe {
             } else {
                 context.set_fill_style(&dead_color);
             }
- 
-            let (row, col) = self.get_row_col(idx);
+
+            let (col, row) = self.get_coordinates(idx);
             context.fill_rect(
                 (col as f64)*(cell_size + 1.0) + 1.0,
                 (row as f64)*(cell_size + 1.0) + 1.0,
