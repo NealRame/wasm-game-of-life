@@ -11,7 +11,8 @@ impl Universe {
 pub fn to_rle(&self) -> String {
     let rle_content = self.cells
         .chunks(self.width as usize)
-        .flat_map(|cells| {
+        .enumerate()
+        .flat_map(|(row_index, cells)| {
             let mut row = cells
                 .iter().map(|cell| match cell {
                     Cell::Alive => 'o',
@@ -25,8 +26,12 @@ pub fn to_rle(&self) -> String {
                 .rev()
                 .position(|&c| c == 'o')
             { row.truncate(cells.len() - last_alive_index); } else { row.clear(); }
-
-            row.push('$');
+            
+            row.push(if row_index as i32 == self.height - 1 {
+                '!'
+            } else {
+                '$'
+            });
             row
         })
         .fold(RLEContent::new(), |mut rle_content, c| {
