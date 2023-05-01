@@ -3,9 +3,11 @@ use wasm_bindgen::prelude::*;
 extern crate js_sys;
 extern crate web_sys;
 
+mod life_1_06_codec;
 mod rle_codec;
 
 pub use rle_codec::*;
+pub use life_1_06_codec::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.

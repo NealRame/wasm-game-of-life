@@ -220,10 +220,19 @@ function createController(tickCount) {
                 render();
             }
         },
-        reset(s) {
+        reset_rle(s) {
             if (!running) {
                 universe.free();
                 universe = Universe.from_rle(s);
+                sizeWidthInput.value = universe.width();
+                sizeHeightInput.value = universe.height();
+                render();
+            }
+        },
+        reset_life_106(s) {
+            if (!running) {
+                universe.free();
+                universe = Universe.from_life_106(s);
                 sizeWidthInput.value = universe.width();
                 sizeHeightInput.value = universe.height();
                 render();
@@ -245,8 +254,11 @@ function createController(tickCount) {
             universe.clear();
             render();
         },
-        export() {
+        export_rle() {
             return universe.to_rle();
+        },
+        export_life_106() {
+            return universe.to_life_106();
         },
         get running() {
             return running;
@@ -255,8 +267,6 @@ function createController(tickCount) {
 }
 
 const controller = createController(5);
-
-
 
 playPauseButton.addEventListener("click", event => {
     if (controller.running) {
@@ -310,18 +320,28 @@ sizeHeightInput.addEventListener("change", event => {
 
 exportButton.addEventListener("click", event => {
     if (!controller.running) {
-        const text = controller.export();
-        ioBuffer.value = text;
-        // const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
-        // saveAs(blob, "game-of-life.rle");
+        // const text = controller.export_rle();
+        const text = controller.export_life_106();
+        // ioBuffer.value = text;
+        const buf = Buffer.from(new TextEncoder().encode(text));
+        // ioBuffer.value = `data:text/life_rle;base64,${buf.toString("base64")}`;
+        ioBuffer.value = `data:text/life_106;base64,${buf.toString("base64")}`;
     }
 })
 
-importButton.addEventListener("click", event => {
+importButton.addEventListener("click", async event => {
     if (!controller.running) {
         const text = ioBuffer.value;
-        controller.reset(text);
-        // const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
-        // saveAs(blob, "game-of-life.rle");
+        if (text.startsWith("data:text/life_106;base64,")) {
+            const buf = await fetch(text);
+            const data = await buf.text();
+            controller.reset_life_106(data);
+        } else if (text.startsWith("data:text/life_rle;base64,")) {
+            const buf = await fetch(text);
+            const data = await buf.text();
+            controller.reset_rle(data);
+        } else {
+            controller.reset_life_106(text);
+        }
     }
 })
