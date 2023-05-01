@@ -1,6 +1,6 @@
 [package]
 name = "wasm-game-of-life"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Julien Graziano <julien@graziano.fr>"]
 edition = "2018"
 
