@@ -4,6 +4,9 @@ use wasm_bindgen::prelude::*;
 
 use crate::*;
 
+/******************************************************************************
+ * Encoder
+ *****************************************************************************/
 type RLEContent = Vec<(usize, char)>;
 
 #[wasm_bindgen]
@@ -25,7 +28,11 @@ pub fn to_rle(&self) -> String {
                 .iter()
                 .rev()
                 .position(|&c| c == 'o')
-            { row.truncate(cells.len() - last_alive_index); } else { row.clear(); }
+            {
+                row.truncate(cells.len() - last_alive_index);
+            } else {
+                row.clear();
+            }
             
             row.push(if row_index as i32 == self.height - 1 {
                 '!'
@@ -73,39 +80,44 @@ pub fn to_rle(&self) -> String {
     rle
 }}
 
+/******************************************************************************
+ * Decoder
+ *****************************************************************************/
+
+pub enum RLEDecoderError {
+    InternalError,
+    InvalidType,
+    InvalidNumber,
+    InvalidTag,
+    InvalidHeader,
+}
+
+impl std::fmt::Display for RLEDecoderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            RLEDecoderError::InternalError => write!(f, "internal error"),
+            RLEDecoderError::InvalidType => write!(f, "invalid type"),
+            RLEDecoderError::InvalidNumber => write!(f, "invalid number"),
+            RLEDecoderError::InvalidTag => write!(f, "invalid tag"),
+            RLEDecoderError::InvalidHeader => write!(f, "invalid header"),
+        }
+    }
+}
+
+impl From<RLEDecoderError> for JsValue {
+    fn from(err: RLEDecoderError) -> Self {
+        JsValue::from_str(&err.to_string())
+    }
+}
+
+fn check_if(cond: bool, err: RLEDecoderError) -> Result<(), RLEDecoderError> {
+    if cond { Ok(()) } else { Err(err) }
+}
+
 enum RLEToken {
     Cell(Cell),
     Count(i32),
     EndOfLine,
-}
-
-struct RLETokenIteratorError {
-}
-
-impl RLETokenIteratorError {
-    pub fn internal_error<T>(_: T) -> JsError {
-        JsError::new("internal error")
-    }
-    
-    pub fn invalid_type<T>(_: T) -> JsError {
-        JsError::new("invalid type")
-    }
-
-    pub fn invalid_number<T>(_: T) -> JsError {
-        JsError::new("invalid number")
-    }
-
-    pub fn invalid_tag<T>(_: T) -> JsError {
-        JsError::new("invalid tag")
-    }
-
-    pub fn invalid_header<T>(_: T) -> JsError {
-        JsError::new("invalid header")
-    }
-}
-
-fn check(cond: bool) -> Result<(), ()> {
-    if cond { Ok(()) } else { Err(()) }
 }
 
 struct RLETokenIterator {
@@ -119,10 +131,10 @@ impl RLETokenIterator {
         Self { str, curr: 0, prev: 0 }
     }
 
-    fn read_number_token(&mut self) -> Result<RLEToken, JsError> {
+    fn read_number_token(&mut self) -> Result<RLEToken, RLEDecoderError> {
         let bytes = self.str.as_bytes();
 
-        check(self.curr < bytes.len()).map_err(RLETokenIteratorError::internal_error)?;
+        check_if(self.curr < bytes.len(), RLEDecoderError::InternalError)?;
 
         while self.curr < bytes.len()
             && bytes[self.curr].is_ascii_digit() {
@@ -130,26 +142,26 @@ impl RLETokenIterator {
         }
 
         let s = std::str::from_utf8(&bytes[self.prev..self.curr])
-            .map_err(RLETokenIteratorError::internal_error)?;
+            .or(Err(RLEDecoderError::InternalError))?;
 
         let v = s.parse::<i32>()
-            .map_err(RLETokenIteratorError::invalid_number)?;
+            .or(Err(RLEDecoderError::InvalidNumber))?;
 
         self.prev = self.curr;
 
         return Ok(RLEToken::Count(v));
     }
 
-    fn read_tag_token(&mut self) -> Result<RLEToken, JsError> {
+    fn read_tag_token(&mut self) -> Result<RLEToken, RLEDecoderError> {
         let bytes = self.str.as_bytes();
 
-        check(self.curr < bytes.len()).map_err(RLETokenIteratorError::internal_error)?;
+        check_if(self.curr < bytes.len(), RLEDecoderError::InternalError)?;
 
         let token = match bytes[self.curr] {
             b'o' => RLEToken::Cell(Cell::Alive),
             b'b' => RLEToken::Cell(Cell::Dead),
             b'$' => RLEToken::EndOfLine,
-            _ => return Err(RLETokenIteratorError::internal_error(())),
+            _ => return Err(RLEDecoderError::InternalError),
         };
 
         self.curr += 1;
@@ -160,7 +172,7 @@ impl RLETokenIterator {
 }
 
 impl Iterator for RLETokenIterator {
-    type Item = Result<RLEToken, JsError>;
+    type Item = Result<RLEToken, RLEDecoderError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let bytes = self.str.as_bytes();
@@ -182,29 +194,29 @@ impl Iterator for RLETokenIterator {
                 None
             },
             _ => {
-                return Some(Err(RLETokenIteratorError::invalid_tag(())));
+                return Some(Err(RLEDecoderError::InvalidTag));
             },
         }
     }
 }
 
-pub fn parse_size_value(dim: &str, s: &str) -> Result<u32, JsError> {
+pub fn parse_size_value(dim: &str, s: &str) -> Result<u32, RLEDecoderError> {
     let parts = s
         .trim()
         .split('=')
         .map(str::trim)
         .collect::<Vec<_>>();
 
-    check(parts.len() == 2).map_err(RLETokenIteratorError::invalid_header)?;
-    check(parts[0] == dim).map_err(RLETokenIteratorError::invalid_header)?;
+    check_if(parts.len() == 2, RLEDecoderError::InvalidHeader)?;
+    check_if(parts[0] == dim, RLEDecoderError::InvalidHeader)?;
 
-    parts[1].parse::<u32>().map_err(RLETokenIteratorError::invalid_header)
+    parts[1].parse::<u32>().or(Err(RLEDecoderError::InvalidHeader))
 }
 
 #[wasm_bindgen]
 impl Universe {
-pub fn from_rle(value: JsValue) -> Result<Universe, JsError> {
-    check(value.is_string()).map_err(RLETokenIteratorError::invalid_type)?;
+pub fn from_rle(value: JsValue) -> Result<Universe, RLEDecoderError> {
+    check_if(value.is_string(), RLEDecoderError::InvalidType)?;
 
     let rle_string = value.as_string().unwrap();
     let mut lines = rle_string
@@ -213,7 +225,7 @@ pub fn from_rle(value: JsValue) -> Result<Universe, JsError> {
 
     // parse the header
     let headers = lines
-        .next().ok_or(RLETokenIteratorError::invalid_header(()))?
+        .next().ok_or(RLEDecoderError::InvalidHeader)?
         .split(',').map(str::trim).collect::<Vec<_>>();
 
     let width = parse_size_value("x", headers[0])?;

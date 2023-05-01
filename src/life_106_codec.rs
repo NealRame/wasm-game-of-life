@@ -2,6 +2,10 @@ use wasm_bindgen::prelude::*;
 
 use crate::*;
 
+/******************************************************************************
+ * Encoder
+ *****************************************************************************/
+
 #[wasm_bindgen]
 impl Universe {
 pub fn to_life_106(&self) -> String {
@@ -16,14 +20,42 @@ pub fn to_life_106(&self) -> String {
     )
 }}
 
-fn expect(cond: bool, message: &str) -> Result<(), JsError> {
-    if cond { Ok(()) } else { Err(JsError::new(message)) }
+/******************************************************************************
+ * Decoder
+ *****************************************************************************/
+
+pub enum Life106DecoderError {
+    InvalidType,
+    InvalidFormat,
+}
+
+impl std::fmt::Display for Life106DecoderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Life106DecoderError::InvalidType => write!(f, "Invalid type"),
+            Life106DecoderError::InvalidFormat => write!(f, "Invalid format"),
+        }
+    }
+}
+
+impl From<Life106DecoderError> for JsValue {
+    fn from(err: Life106DecoderError) -> Self {
+        JsValue::from_str(&err.to_string())
+    }
+}
+
+fn check_if(
+    cond: bool,
+    err: Life106DecoderError,
+) -> Result<(), Life106DecoderError> {
+    if cond
+    { Ok(()) } else { Err(err) }
 }
 
 #[wasm_bindgen]
 impl Universe {
-pub fn from_life_106(value: JsValue) -> Result<Universe, JsError> {
-    expect(value.is_string(), "Expected a string")?;
+pub fn from_life_106(value: JsValue) -> Result<Universe, Life106DecoderError> {
+    check_if(value.is_string(), Life106DecoderError::InvalidType)?;
 
     let life_106_string = value.as_string().unwrap();
 
@@ -35,10 +67,10 @@ pub fn from_life_106(value: JsValue) -> Result<Universe, JsError> {
             .filter(|part| !part.is_empty())
             .collect::<Vec<_>>();
 
-        expect(parts.len() == 2, "Expected two numbers per line")?;
+        check_if(parts.len() == 2, Life106DecoderError::InvalidFormat)?;
 
-        let x = parts[0].parse::<i32>().map_err(|_| JsError::new("Expected a number"))?;
-        let y = parts[1].parse::<i32>().map_err(|_| JsError::new("Expected a number"))?;
+        let x = parts[0].parse::<i32>().or(Err(Life106DecoderError::InvalidFormat))?;
+        let y = parts[1].parse::<i32>().or(Err(Life106DecoderError::InvalidFormat))?;
 
         cells.push((x, y));
     }
