@@ -70,7 +70,7 @@ impl Universe {
         &self.cells
     }
 
-    fn get_index(&self, row: i32, col: i32) -> usize {
+    fn get_index(&self, col: i32, row: i32) -> usize {
         let col = ((col%self.width  + self.width )%self.width) as u32;
         let row = ((row%self.height + self.height)%self.height) as u32;
         coordinates_to_idx(col, row, self.width as u32, self.height as u32)
@@ -84,13 +84,13 @@ impl Universe {
             .unwrap()
     }
 
-    fn live_neighbour_count(&self, row: i32, col: i32) -> u8 {
+    fn live_neighbour_count(&self, col: i32, row: i32) -> u8 {
         let mut count = 0;
 
         for delta_row in [-1, 0, 1].iter().cloned() {
             for delta_col in [-1, 0, 1].iter().cloned() {
                 if delta_row != 0 || delta_col != 0 {
-                    let idx = self.get_index(row + delta_row, col + delta_col);
+                    let idx = self.get_index(col + delta_col, row + delta_row);
                     count += self.cells[idx] as u8;
                 }
             }
@@ -194,14 +194,14 @@ impl Universe {
     }
 
     /// Get the state of a cell in the universe.
-    pub fn get_cell(&self, row: i32, col: i32) -> Cell {
-        let idx = self.get_index(row, col);
+    pub fn get_cell(&self, col: i32, row: i32) -> Cell {
+        let idx = self.get_index(col, row);
         self.cells[idx]
     }
 
     /// Set the state of a cell in the universe.
-    pub fn set_cell(&mut self, row: i32, col: i32, state: Cell) {
-        let idx = self.get_index(row, col);
+    pub fn set_cell(&mut self, col: i32, row: i32, state: Cell) {
+        let idx = self.get_index(col, row);
         self.cells[idx] = state;
     }
 
@@ -218,8 +218,8 @@ impl Universe {
             .map(|value| {
                 if value.is_array() {
                     let cell = value.unchecked_into::<js_sys::Array>();
-                    let (row, col) = js_array_to_coordinate_tuple(&cell)?;
-                    self.set_cell(row, col, state);
+                    let (col, row) = js_array_to_coordinate_tuple(&cell)?;
+                    self.set_cell(col, row, state);
                     Ok(())
                 } else { Err(JsError::new("Invalid type")) }
             })
@@ -227,8 +227,8 @@ impl Universe {
     }
 
     /// Set the state of a cell in the universe.
-    pub fn toggle_cell(&mut self, row: i32, col: i32) {
-        let idx = self.get_index(row, col);
+    pub fn toggle_cell(&mut self, col: i32, row: i32) {
+        let idx = self.get_index(col, row);
         self.cells[idx].toggle();
     }
 
@@ -241,8 +241,8 @@ impl Universe {
             .iter()
             .map(|value| {
                 let cell = value.unchecked_into::<js_sys::Array>();
-                let (row, col) = js_array_to_coordinate_tuple(&cell)?;
-                self.toggle_cell(row, col);
+                let (col, row) = js_array_to_coordinate_tuple(&cell)?;
+                self.toggle_cell(col, row);
                 Ok(())
             })
             .collect::<Result<(), JsError>>()
@@ -253,9 +253,9 @@ impl Universe {
 
         for row in 0..self.height {
             for col in 0..self.width {
-                let idx = self.get_index(row, col);
+                let idx = self.get_index(col, row);
                 let cell = self.cells[idx];
-                let live_neighbours = self.live_neighbour_count(row, col);
+                let live_neighbours = self.live_neighbour_count(col, row);
 
                 let next_cell = match (cell, live_neighbours) {
                     (Cell::Alive, x) if x < 2 => Cell::Dead,

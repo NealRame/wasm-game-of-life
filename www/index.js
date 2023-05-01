@@ -3,9 +3,6 @@ import {
     Universe,
 } from "wasm-game-of-life";
 
-import {
-    memory,
-} from "wasm-game-of-life/wasm_game_of_life_bg";
 
 const CELL_SIZE = 10; // px
 const GRID_COLOR = "#CCCCCC";
@@ -154,38 +151,38 @@ function createController(tickCount) {
 
         if (event.altKey) {
             universe.set_cells([
-                [row + 1, col - 1],
-                [row - 1, col    ],
-                [row + 1, col    ],
-                [row    , col + 1],
-                [row + 1, col + 1],
+                [col - 1, row + 1, ],
+                [col    , row - 1, ],
+                [col    , row + 1, ],
+                [col + 1, row    , ],
+                [col + 1, row + 1, ],
             ], Cell.Alive)
         } else if (event.shiftKey) {
             universe.set_cells([
-                [row - 2, col - 1], [row - 3, col - 1], [row - 4, col - 1],
-                [row - 1, col - 2], [row - 6, col - 2],
-                [row - 1, col - 3], [row - 6, col - 3],
-                [row - 1, col - 4], [row - 6, col - 4],
-                [row - 2, col - 6], [row - 3, col - 6], [row - 4, col - 6],
-                [row + 2, col - 1], [row + 3, col - 1], [row + 4, col - 1],
-                [row + 1, col - 2], [row + 6, col - 2],
-                [row + 1, col - 3], [row + 6, col - 3],
-                [row + 1, col - 4], [row + 6, col - 4],
-                [row + 2, col - 6], [row + 3, col - 6], [row + 4, col - 6],
-                [row - 2, col + 1], [row - 3, col + 1], [row - 4, col + 1],
-                [row - 1, col + 2], [row - 6, col + 2],
-                [row - 1, col + 3], [row - 6, col + 3],
-                [row - 1, col + 4], [row - 6, col + 4],
-                [row - 2, col + 6], [row - 3, col + 6], [row - 4, col + 6],
-                [row + 2, col + 1], [row + 3, col + 1], [row + 4, col + 1],
-                [row + 1, col + 2], [row + 6, col + 2],
-                [row + 1, col + 3], [row + 6, col + 3],
-                [row + 1, col + 4], [row + 6, col + 4],
-                [row + 2, col + 6], [row + 3, col + 6], [row + 4, col + 6],
+                [col - 1, row - 2, ], [col - 1, row - 3, ], [col - 1, row - 4, ],
+                [col - 2, row - 1, ], [col - 2, row - 6, ],
+                [col - 3, row - 1, ], [col - 3, row - 6, ],
+                [col - 4, row - 1, ], [col - 4, row - 6, ],
+                [col - 6, row - 2, ], [col - 6, row - 3, ], [col - 6, row - 4, ],
+                [col - 1, row + 2, ], [col - 1, row + 3, ], [col - 1, row + 4, ],
+                [col - 2, row + 1, ], [col - 2, row + 6, ],
+                [col - 3, row + 1, ], [col - 3, row + 6, ],
+                [col - 4, row + 1, ], [col - 4, row + 6, ],
+                [col - 6, row + 2, ], [col - 6, row + 3, ], [col - 6, row + 4, ],
+                [col + 1, row - 2, ], [col + 1, row - 3, ], [col + 1, row - 4, ],
+                [col + 2, row - 1, ], [col + 2, row - 6, ],
+                [col + 3, row - 1, ], [col + 3, row - 6, ],
+                [col + 4, row - 1, ], [col + 4, row - 6, ],
+                [col + 6, row - 2, ], [col + 6, row - 3, ], [col + 6, row - 4, ],
+                [col + 1, row + 2, ], [col + 1, row + 3, ], [col + 1, row + 4, ],
+                [col + 2, row + 1, ], [col + 2, row + 6, ],
+                [col + 3, row + 1, ], [col + 3, row + 6, ],
+                [col + 4, row + 1, ], [col + 4, row + 6, ],
+                [col + 6, row + 2, ], [col + 6, row + 3, ], [col + 6, row + 4, ],
             ], Cell.Alive)
 
         } else {
-            universe.toggle_cell(row, col);
+            universe.toggle_cell(col, row);
         }
 
         if (!running) {

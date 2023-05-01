@@ -59,8 +59,8 @@ pub fn from_life_106(value: JsValue) -> Result<Universe, JsError> {
     let mut universe = Universe::new(width, height);
     for (x, y) in cells {
         universe.set_cell(
-            y - y_min,
             x - x_min,
+            y - y_min,
             Cell::Alive,
         );
     }

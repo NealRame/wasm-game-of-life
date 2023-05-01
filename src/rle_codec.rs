@@ -232,7 +232,7 @@ pub fn from_rle(value: JsValue) -> Result<Universe, JsError> {
             },
             RLEToken::Cell(cell) => {
                 (0..count).for_each(|i| {
-                    universe.set_cell(row, col + i, cell);
+                    universe.set_cell(col + i, row, cell);
                 });
                 col += count;
                 count = 1;
