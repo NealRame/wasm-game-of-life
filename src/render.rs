@@ -23,9 +23,9 @@ pub fn render_to_context(
     &self,
     context: web_sys::CanvasRenderingContext2d,
     theme: JsValue,
-) -> Result<(), JsError> {
+) -> Result<(), String> {
     let cell_size = match js_sys::Reflect::get(&theme, &"cellSize".into()) {
-        Ok(value) => value.as_f64().ok_or(JsError::new("cellSize should be a number"))?,
+        Ok(value) => value.as_f64().ok_or("cellSize should be a number")?,
         Err(_) => 5.0,
     };
 
