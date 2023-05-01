@@ -5,7 +5,6 @@ extern crate web_sys;
 
 mod life_106_codec;
 mod rle_codec;
-
 mod render;
 
 pub use rle_codec::*;
