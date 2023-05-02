@@ -14,6 +14,11 @@ const stepButton = document.querySelector("#step");
 const randomizeButton = document.querySelector("#randomize");
 const clearButton = document.querySelector("#clear");
 
+const moveLeftButton = document.querySelector("#move-left");
+const moveRightButton = document.querySelector("#move-right");
+const moveUpButton = document.querySelector("#move-up");
+const moveDownButton = document.querySelector("#move-down");
+
 const mouseRowInput = document.querySelector("#position > #mouse-row");
 const mouseColInput = document.querySelector("#position > #mouse-col");
 
@@ -247,6 +252,30 @@ function createController(tickCount) {
                 render();
             }
         },
+        moveUp() {
+            if (!running) {
+                universe.translate(0, -1);
+                render();
+            }
+        },
+        moveDown() {
+            if (!running) {
+                universe.translate(0, 1);
+                render();
+            }
+        },
+        moveLeft() {
+            if (!running) {
+                universe.translate(-1, 0);
+                render();
+            }
+        },
+        moveRight() {
+            if (!running) {
+                universe.translate(1, 0);
+                render();
+            }
+        },
         clear() {
             universe.clear();
             render();
@@ -273,6 +302,10 @@ playPauseButton.addEventListener("click", event => {
         clearButton.disabled = false;
         stepButton.disabled = false;
         exportButton.disabled = false;
+        moveLeftButton.disabled = false;
+        moveRightButton.disabled = false;
+        moveDownButton.disabled = false;
+        moveUpButton.disabled = false;
     } else {
         controller.start();
         playPauseButton.classList.remove("pause");
@@ -280,6 +313,10 @@ playPauseButton.addEventListener("click", event => {
         clearButton.disabled = true;
         stepButton.disabled = true;
         exportButton.disabled = true;
+        moveLeftButton.disabled = true;
+        moveRightButton.disabled = true;
+        moveDownButton.disabled = true;
+        moveUpButton.disabled = true;
     }
 });
 
@@ -301,6 +338,30 @@ stepButton.addEventListener("click", event => {
     }
 })
 
+moveDownButton.addEventListener("click", event => {
+    if (!controller.running) {
+        controller.moveDown();
+    }
+})
+
+moveUpButton.addEventListener("click", event => {
+    if (!controller.running) {
+        controller.moveUp();
+    }
+})
+
+moveLeftButton.addEventListener("click", event => {
+    if (!controller.running) {
+        controller.moveLeft();
+    }
+})
+
+moveRightButton.addEventListener("click", event => {
+    if (!controller.running) {
+        controller.moveRight();
+    }
+})
+
 sizeWidthInput.addEventListener("change", event => {
     if (!controller.running) {
         const width = parseInt(sizeWidthInput.value);
@@ -317,28 +378,36 @@ sizeHeightInput.addEventListener("change", event => {
 
 exportButton.addEventListener("click", event => {
     if (!controller.running) {
-        // const text = controller.export_rle();
-        const text = controller.export_life_106();
+        const text = controller.export_rle();
+        // const text = controller.export_life_106();
         // ioBuffer.value = text;
         const buf = Buffer.from(new TextEncoder().encode(text));
-        // ioBuffer.value = `data:text/life_rle;base64,${buf.toString("base64")}`;
-        ioBuffer.value = `data:text/life_106;base64,${buf.toString("base64")}`;
+        ioBuffer.value = `data:text/life_rle;base64,${buf.toString("base64")}`;
+        // ioBuffer.value = `data:text/life_106;base64,${buf.toString("base64")}`;
     }
 })
 
 importButton.addEventListener("click", async event => {
     if (!controller.running) {
         const text = ioBuffer.value;
+        const res = await fetch(text);
+
+        console.log(res.headers.get("content-type"));
+
+        res.headers.forEach((v, k) => {
+            console.log(`${k}: ${v}`);
+        });
+
+
         if (text.startsWith("data:text/life_106;base64,")) {
-            const buf = await fetch(text);
-            const data = await buf.text();
+            const data = await res.text();
             controller.reset_life_106(data);
         } else if (text.startsWith("data:text/life_rle;base64,")) {
             const buf = await fetch(text);
-            const data = await buf.text();
+            const data = await res.text();
             controller.reset_rle(data);
         } else {
-            controller.reset_life_106(text);
+            controller.reset_rle(text);
         }
     }
 })

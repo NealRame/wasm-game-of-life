@@ -192,6 +192,20 @@ impl Universe {
         self.cells.as_ptr()
     }
 
+    pub fn translate(&mut self, dx: i32, dy: i32) {
+        let mut new_cells = vec![Cell::Dead; (self.width*self.height) as usize];
+        self.cells
+            .iter()
+            .enumerate()
+            .filter(|(_, &cell)| cell == Cell::Alive)
+            .for_each(|(idx, &cell)| {
+                let (x, y) = self.get_coordinates(idx);
+                let new_idx = self.get_index(x + dx, y + dy);
+                new_cells[new_idx] = cell;
+            });
+        self.cells = new_cells;
+    }
+
     /// Get the state of a cell in the universe.
     pub fn get_cell(&self, col: i32, row: i32) -> Cell {
         let idx = self.get_index(col, row);
